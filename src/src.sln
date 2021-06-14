@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31205.134
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KCFontUtility", "KCFontUtility\KCFontUtility.csproj", "{D57C17FF-8003-4ECB-B699-169C24EFE78E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FontDemo", "FontDemo\FontDemo.csproj", "{5F87A4C8-5204-47ED-841B-F3CA86BA48EE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D57C17FF-8003-4ECB-B699-169C24EFE78E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D57C17FF-8003-4ECB-B699-169C24EFE78E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D57C17FF-8003-4ECB-B699-169C24EFE78E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D57C17FF-8003-4ECB-B699-169C24EFE78E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F87A4C8-5204-47ED-841B-F3CA86BA48EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F87A4C8-5204-47ED-841B-F3CA86BA48EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F87A4C8-5204-47ED-841B-F3CA86BA48EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F87A4C8-5204-47ED-841B-F3CA86BA48EE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {558F5692-0DAE-4779-846E-ADC4B6FCE251}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,27 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "點陣中文測試";
+}
+@section styles {
+<style>
+    #result {
+        border: none;
+    }
+    
+</style>
+}
+<div class="text-center">
+    <form method="post" target="result">
+        <input class="w-75" type="text" name="message" placeholder="請輸入顯示文字" value="黑暗執行緒"/>
+        <select name="fontSize">
+            <option value="16" selected>16x16</option>
+            <option value="24">24x24</option>
+        </select>
+        <button asp-page-handler="Display">顯示</button>
+    </form>
+    <hr />
+    <iframe id="result" name="result" class="w-100" src="about:blank">
+
+    </iframe>
+</div>
