@@ -28,6 +28,11 @@ namespace KCFontUtility
             }
             dataPool.Add("C" + FontSize.Size16, data);
 
+            //16x16 全形英數字及符號
+            data = new byte[765 * 2 * 16];
+            Buffer.BlockCopy(buff, 256, data, 0, data.Length);
+            dataPool.Add("S" + FontSize.Size16, data);
+
             buff = File.ReadAllBytes(
                 Path.Combine(fontPath, asciiFont16FileName));
             data = new byte[256 * 16];
@@ -45,6 +50,12 @@ namespace KCFontUtility
             }
             dataPool.Add("C" + FontSize.Size24, data);
 
+            //24x24 全形英數字及符號
+            data = new byte[765 * 72];
+            Buffer.BlockCopy(buff, 256, data, 0, data.Length);
+            dataPool.Add("S" + FontSize.Size24, data);
+
+
             buff = File.ReadAllBytes(Path.Combine(fontPath, asciiFont24FileName));
             data = new byte[256 * 48];
             offset = 256;
@@ -53,15 +64,53 @@ namespace KCFontUtility
             dataPool.Add("A" + FontSize.Size24, data);
         }
 
-        public override byte[] GetFontData(FontSize sz, bool halfWidth)
+        public override void FillFont(CharData ch, FontSize sz)
         {
-            string key = (halfWidth ? "A" : "C") + sz;
+            string key = ch.Category.ToString().Substring(0, 1) + sz;
             if (!dataPool.ContainsKey(key))
                 throw new NotImplementedException();
-            return dataPool[key];
+            var data = dataPool[key];
+
+            int wb = (int)sz / 8;
+            int hb = (int)sz;
+            var offset = 0;
+            if (sz == FontSize.Size24)
+            {
+                switch (ch.Category)
+                {
+                    case CharCategories.Ascii:
+                        wb = 2;
+                        break;
+                }
+            }
+            else
+            {
+                switch (ch.Category)
+                {
+                    case CharCategories.Ascii:
+                        wb = 1;
+                        hb = 15;
+                        break;
+                    case CharCategories.Symbol:
+                        hb = 16;
+                        break;
+                    case CharCategories.Chinese:
+                        hb = 15;
+                        break;
+                }
+            }
+            var arraySize = wb * hb;
+            var buff = new byte[arraySize];
+            Array.Copy(data, offset + ch.RelativePos * arraySize, buff, 0, arraySize);
+            ch.Font = new FontData
+            {
+                Binary = buff,
+                HeightBytes = hb,
+                WidthBytes = wb
+            };
         }
 
-        protected override int GetWidthBytes(FontSize fontSize, bool halfWidth)
+        int GetWidthBytes(FontSize fontSize, bool halfWidth)
         {
             switch (fontSize)
             {
@@ -74,7 +123,7 @@ namespace KCFontUtility
             }
         }
 
-        protected override int GetHeightBytes(FontSize fontSize, bool halfWidth)
+        int GetHeightBytes(FontSize fontSize, bool halfWidth)
         {
             switch (fontSize)
             {

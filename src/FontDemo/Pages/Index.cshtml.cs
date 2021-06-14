@@ -47,9 +47,9 @@ namespace FontDemo.Pages
             int offset = 0;
             foreach (char ch in message)
             {
-                byte[,] d = kcfp.GetDotArray(
-                    kcfp.GetCharData(ch, (DotArrayFontProvider.FontSize)sz), 
-                    sz, sz, fs);
+                var fontData = kcfp.GetFontData(ch, fs);
+                byte[,] d = kcfp.GetDotArray(fontData,                   
+                    sz, sz);
                 var w = kcfp.IsHalfWidth(ch) ? sz / 2 : sz;
                 for (int y = 0; y < sz; y++)
                 {
