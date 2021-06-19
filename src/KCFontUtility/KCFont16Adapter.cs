@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace KCFontUtility
@@ -23,22 +25,22 @@ namespace KCFontUtility
         const int KCHeaderOffset = 256;
         const int SymbolDataOffset = 765 * 2 * 16;
         public byte[] GetByteArrayForCategory(CharCategories catg)
-            {
-            switch(catg)
+        {
+            switch (catg)
             {
                 case CharCategories.Ascii: return new byte[15];
                 case CharCategories.Symbol: return new byte[2 * 16];
                 case CharCategories.Chinese: return new byte[2 * 14];
                 default: throw new NotSupportedException();
             }
-            }
+        }
 
         public byte[] ReadFont(char ch)
         {
 
             var cd = new CharData(ch);
             var b = GetByteArrayForCategory(cd.Category);
-            switch(cd.Category)
+            switch (cd.Category)
             {
                 case CharCategories.Ascii:
                     lock (KCTEXT16)
@@ -71,7 +73,6 @@ namespace KCFontUtility
             var cd = new CharData(ch);
             var fontData = ReadFont(ch);
             var bmp = new Bitmap(cd.Category == CharCategories.Ascii ? 8 : 16, 16);
-            //Graphics.FromImage(bmp).FillRectangle(new SolidBrush(Color.White), 0, 0, bmp.Width, bmp.Height);
             var h = cd.Category == CharCategories.Symbol ? 16 : (cd.Category == CharCategories.Chinese ? 14 : 15);
             var w = cd.Category == CharCategories.Ascii ? 8 : 16;
             var offset = 0;
@@ -91,13 +92,47 @@ namespace KCFontUtility
             }
             using (var ms = new MemoryStream())
             {
-                //var bmpData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, PixelFormat.Format1bppIndexed);
-                //var monochrome = new Bitmap(bmp.Width, bmp.Height, bmpData.Stride, PixelFormat.Format4bppIndexed, bmpData.Scan0);
-                //bmp.UnlockBits(bmpData);
-                //monochrome.Save(ms, ImageFormat.Bmp);
-                //bmp.Save(ms, ImageFormat.Gif);
                 bmp.Save(ms, ImageFormat.Png);
                 return ms.ToArray();
+            }
+        }
+
+        static Bitmap Bmp4Ascii = new Bitmap(8, 16, PixelFormat.Format1bppIndexed);
+        static Bitmap Bmp4Chinese = new Bitmap(16, 16, PixelFormat.Format1bppIndexed);
+
+        public byte[] GetCharBmp(char ch)
+        {
+            var cd = new CharData(ch);
+            var fontData = ReadFont(ch);
+            var w = cd.Category == CharCategories.Ascii ? 8 : 16;
+            var fontDataStride = w / 8;
+            var h = 16;
+            var bmp = cd.Category == CharCategories.Ascii ? Bmp4Ascii : Bmp4Chinese;
+            lock (bmp)
+            {
+                var bmd = bmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadWrite, PixelFormat.Format1bppIndexed);
+                var idx = 0;
+                unsafe
+                {
+                    byte* p = (byte*)bmd.Scan0;
+                    for (var y = 0; y < h; y++)
+                    {
+                        for (var s = 0; s < bmd.Stride; s++)
+                        {
+                            if (s < fontDataStride && idx < fontData.Length)
+                            {
+                                p[0] = fontData[idx++];
+                            }
+                            p++;
+                        }
+                    }
+                }
+                bmp.UnlockBits(bmd);
+                using (var ms = new MemoryStream())
+                {
+                    bmp.Save(ms, ImageFormat.Bmp);
+                    return ms.ToArray();
+                }
             }
         }
 
