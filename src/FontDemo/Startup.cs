@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,6 +29,9 @@ namespace FontDemo
         {
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             services.AddSingleton<KCFontProvider>(new KCFontProvider(Env.ContentRootPath));
+            services.AddSingleton<KCFont16Adapter>(new KCFont16Adapter(
+                new FileStream(Path.Combine(Env.ContentRootPath, "KCCHIN16.F00"), FileMode.Open),
+                new FileStream(Path.Combine(Env.ContentRootPath, "KCTEXT16.F00"), FileMode.Open)));
             services.AddRazorPages();
         }
 
