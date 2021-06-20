@@ -136,6 +136,110 @@ namespace KCFontUtility
             }
         }
 
+        static Brush Black = new SolidBrush(Color.Black);
+        static Dictionary<string, Point> PosOffset = new Dictionary<string, Point>()
+        {
+            ["細明體"] = new Point(1, 0),
+            ["Noto Sans CJK TC Light"] = new Point(0, -3)
+        };
+        public Bitmap DrawCharBmp(char ch, string fontName)
+        {
+            var cd = new CharData(ch);
+            var bmp = new Bitmap(cd.Category == CharCategories.Ascii ? 8 : 16, 16);
+            var h = cd.Category == CharCategories.Symbol ? 16 : (cd.Category == CharCategories.Chinese ? 14 : 15);
+            var w = cd.Category == CharCategories.Ascii ? 8 : 16;
+            var g = Graphics.FromImage(bmp);
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+            var offset = PosOffset[fontName];
+            g.DrawString(ch.ToString(), new Font(fontName, 10), new SolidBrush(Color.White), offset.X, offset.Y);
+            Bitmap monochrome = new Bitmap(w, 16, PixelFormat.Format1bppIndexed);
+            Convert(bmp, monochrome);
+            return monochrome;
+        }
+
+        public byte[] ExtractFontData(Bitmap bmp, int rowCount = 14)
+        {
+            var bmd = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly,
+                         bmp.PixelFormat);
+            var fontStride = bmp.Width / 8;
+            var fontData = new byte[rowCount * fontStride];
+            var idx = 0;
+            unsafe
+            {
+                byte* p = (byte*)bmd.Scan0;
+                for (var y = 0; y < rowCount; y++)
+                {
+                    for (var s = 0; s < bmd.Stride; s++)
+                    {
+                        if (s < fontStride && idx < fontData.Length)
+                        {
+                            fontData[idx++] = p[0];
+                        }
+                        p++;
+                    }
+                }
+            }
+            return fontData;
+        }
+
+
+        //REF: https://stackoverflow.com/a/22256055/288936
+        private static unsafe void Convert(Bitmap src, Bitmap conv)
+        {
+
+            // Lock source and destination in memory for unsafe access
+            var bmbo = src.LockBits(new Rectangle(0, 0, src.Width, src.Height), ImageLockMode.ReadOnly,
+                                     src.PixelFormat);
+            var bmdn = conv.LockBits(new Rectangle(0, 0, conv.Width, conv.Height), ImageLockMode.ReadWrite,
+                                     conv.PixelFormat);
+
+            var srcScan0 = bmbo.Scan0;
+            var convScan0 = bmdn.Scan0;
+
+            var srcStride = bmbo.Stride;
+            var convStride = bmdn.Stride;
+
+            byte* sourcePixels = (byte*)(void*)srcScan0;
+            byte* destPixels = (byte*)(void*)convScan0;
+
+            var srcLineIdx = 0;
+            var convLineIdx = 0;
+            var hmax = src.Height - 1;
+            var wmax = src.Width - 1;
+            for (int y = 0; y < hmax; y++)
+            {
+                // find indexes for source/destination lines
+
+                // use addition, not multiplication?
+                srcLineIdx += srcStride;
+                convLineIdx += convStride;
+
+                var srcIdx = srcLineIdx;
+                for (int x = 0; x < wmax; x++)
+                {
+                    // index for source pixel (32bbp, rgba format)
+                    srcIdx += 4;
+                    //var r = pixel[2];
+                    //var g = pixel[1];
+                    //var b = pixel[0];
+
+                    // could just check directly?
+                    //if (Color.FromArgb(r,g,b).GetBrightness() > 0.01f)
+                    if (!(sourcePixels[srcIdx] == 0 && sourcePixels[srcIdx + 1] == 0 && sourcePixels[srcIdx + 2] == 0))
+                    {
+                        // destination byte for pixel (1bpp, ie 8pixels per byte)
+                        var idx = convLineIdx + (x >> 3);
+                        // mask out pixel bit in destination byte
+                        destPixels[idx] |= (byte)(0x80 >> (x & 0x7));
+                    }
+                }
+            }
+            src.UnlockBits(bmbo);
+            conv.UnlockBits(bmdn);
+        }
+
+
+
         public void WriteFont(char ch, byte[] data)
         {
             var cd = new CharData(ch);

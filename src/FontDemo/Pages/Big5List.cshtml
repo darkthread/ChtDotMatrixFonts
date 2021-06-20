@@ -1,0 +1,165 @@
+﻿@page
+@model FontDemo.Pages.Big5ListModel
+@{
+    byte page = 0xa1;
+    try
+    {
+        string p = Request.Query["p"];
+        if (!string.IsNullOrEmpty(p))
+            page = Convert.ToByte(p, 16);
+    }
+    catch { 
+        page = 0xa1;
+    }
+    byte[] rows = new byte[] { 0x40, 0x50, 0x60, 0x70, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0 };
+    var big5 = System.Text.Encoding.GetEncoding(950);
+}
+@section Styles {
+    <style>
+        .big5-table {
+            width: 400px;
+        }
+
+        td {
+            border: 1px solid gray;
+            padding: 6px;
+            text-align: center;
+        }
+
+            td.hdr {
+                background-color: #eee;
+            }
+
+            td.na {
+                background-color: #ddd;
+            }
+        [data-big5] {
+            cursor: pointer;
+        }
+        [data-big5]:hover {
+            color: #0026ff;
+            text-decoration: underline;
+        }
+        #display { 
+            margin-left: 12px; 
+            font-size: 9pt;
+        }
+        .fontview td {
+            border: 1px solid gray;
+            line-height: 12px;
+            width: 12px;
+            padding: 0;
+        }
+        .fontview td.h {
+            width: 55px;
+            padding: 0 3px;
+            background-color: #eee;
+        }
+            .fontview .v1 {
+                background-color: #444;
+            }
+        #kcBmp,#diyBmp { padding: 3px; }
+        .op {
+            font-size: 10pt;
+            padding: 3px;
+        }
+    </style>
+}
+<div class="op">
+    @if (page > 0xa1)
+    {
+        <a href="?p=@((page-1).ToString("x2"))">上一頁</a>
+    }
+    @if (page < 0xf9)
+    {
+        <a href="?p=@((page+1).ToString("x2"))">下一頁</a>}
+    <span>測試字型</span>
+    <select id="selFontName">
+        <option value="細明體">細明體</option>
+        <option value="Noto Sans CJK TC Light">Noto Sans CJK TC Light</option>
+    </select>
+</div>
+
+<div style="display:flex">
+    <table class="big5-table">
+        <thead>
+            <tr>
+                <td class="hdr"></td>
+                @for (int i = 0; i < 16; i++)
+                {
+                    <td class="hdr">@i.ToString("X")</td>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (byte baseLo in rows)
+            {
+                <tr>
+                    <td class="hdr">@($"{page:X2}{baseLo:X2}")</td>
+                    @for (byte lo = 0; lo < 16; lo++)
+                    {
+                        @if (((baseLo == 0x70 || baseLo == 0xf0) && lo == 0xf) ||
+                             (baseLo == 0xa0 && lo == 0x0))
+                        {
+                            <td class="na"></td>
+                        }
+                        else
+                        {
+                            <td data-big5="@($"{page:X2}{(baseLo+lo):X2}")">
+                                @big5.GetString(new byte[] { page, (byte)(baseLo + lo) })
+                            </td>
+                        }
+                    }
+                </tr>
+
+            }
+        </tbody>
+    </table>
+    <div id="display">
+        <div id="kcBmp"></div>
+        <div id="kcView"></div>
+        <div id="diyBmp"></div>
+        <div id="diyView"></div>
+    </div>
+</div>
+@section Scripts {
+<script>
+    function showFont(url, big5Code, viewId) {
+        $.get(url, { big5Code: big5Code }, function (hex) {
+            var a = hex.split('-');
+            var h = ['<table class=fontview>'];
+            function toBin(v) {
+                v = parseInt(v, 16);
+                for (var j = 0; j < 8; j++) {
+                    var d = ((v << j) & 0x80) > 0 ? '1' : '0';
+                    h.push('<td class=v' + d + '></td>');
+                }
+            }
+            for (var i = 0; i < a.length / 2; i++) {
+                var o = i * 2;
+                h.push('<tr><td class=h>' + a[o] + ' ' + a[o + 1] + '</td>');
+                toBin(a[o]);
+                toBin(a[o + 1]);
+                h.push('</tr>');
+            }
+            h.push('</table>');
+            $('#' + viewId).html(h.join(''));
+        });
+
+    }
+
+
+    $('.big5-table').on('click', '[data-big5]', function () {
+        $('#kcView').html('');
+        var big5Code = $(this).data('big5');
+        var fontName = $('#selFontName').val();
+        $('#kcBmp').html('<img src="?handler=KCFontBmp&big5Code=' + big5Code + '" /> <span>國喬</span>');
+        $('#diyBmp').html('<img src="?handler=DiyFontBmp&big5Code=' + big5Code + '&fontName=' + encodeURIComponent(fontName) + '" /> <span>' + fontName + '</span>');
+        showFont('?handler=KCFont', big5Code, 'kcView');
+        showFont('?handler=DiyFont&fontName=' + encodeURIComponent(fontName), big5Code, 'diyView');
+    });
+</script>
+} 
+
+
+
